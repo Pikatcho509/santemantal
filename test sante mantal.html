@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Santé Mentale HD — Soutien Émotionnel</title>
+  <style>
+    :root{
+      --bg1:#FFF7F3; --bg2:#FFF2E8;
+      --accent:#ff8fa3; --accent-2:#ffd29f;
+      --muted:#6b6b6b; --card:#ffffff; --glass:rgba(255,255,255,0.72);
+      --radius:16px; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      background:linear-gradient(160deg,var(--bg1) 0%, var(--bg2) 100%);
+      display:flex;align-items:center;justify-content:center;padding:24px;color:#222;
+    }
+    .wrap{max-width:1100px;width:100%;display:grid;grid-template-columns:1fr 420px;gap:24px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 30px rgba(50,50,70,0.08);padding:22px}
+    header h1{margin:0;font-size:26px;color:#ff6b6b;text-align:center;}
+    header p{color:var(--muted);margin-top:6px;text-align:center;}
+    form{display:flex;flex-direction:column;gap:10px}
+    input[type=text], textarea, select{padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,0.06);font-size:15px}
+    textarea{min-height:100px;resize:vertical}
+    .row{display:flex;gap:8px}
+    .btn{padding:10px;border-radius:12px;border:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;font-weight:600;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--muted)}
+    .btn.emergency{background:linear-gradient(90deg,#ff6b6b,#ff8e8e);animation:pulse 2s infinite}
+    .messages{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:6px}
+    .msg{padding:12px;border-radius:12px;background:var(--glass);backdrop-filter: blur(4px)}
+    .meta{font-size:12px;color:var(--muted)}
+    .admin{margin-top:12px;border-left:3px solid rgba(0,0,0,0.03);padding-left:12px}
+    footer{font-size:13px;color:var(--muted);margin-top:14px}
+    .float-wrap{position:fixed;right:8px;bottom:8px;pointer-events:none}
+    .heart{width:36px;height:36px;opacity:0.14;margin:6px;border-radius:8px;background:linear-gradient(180deg,#fff 0%, rgba(255,140,160,0.9) 100%);animation:float 6s infinite}
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-28px)}100%{transform:translateY(0)}}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+    .image-carousel{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:12px}
+    .carousel-track{display:flex;transition:transform .6s ease}
+    .carousel-slide{min-width:100%}
+    .carousel-slide img{width:100%;height:220px;object-fit:cover;display:block}
+    .carousel-dots{display:flex;gap:8px;justify-content:center;margin-top:8px}
+    .dot{width:9px;height:9px;border-radius:50%;background:rgba(0,0,0,0.15);cursor:pointer}
+    .dot.active{background:rgba(0,0,0,0.7)}
+    .confirmation-message{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);opacity:0;pointer-events:none;transition:opacity .25s;z-index:1000}
+    .confirmation-message.show{opacity:1;pointer-events:auto}
+    .confirmation-content{background:white;padding:18px;border-radius:12px;max-width:420px;text-align:center}
+    .typing-encouragement{font-style:italic;color:#ba68c8;text-align:center;margin-top:6px;opacity:0;transition:opacity .3s}
+    .comment-section{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.1)}
+    .comment{background:rgba(0,0,0,0.03);padding:8px;border-radius:8px;margin-top:5px;font-size:14px;position:relative;}
+    .comment-form{display:flex;gap:6px;margin-top:8px}
+    .comment-input{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);font-size:14px}
+    .emergency-alert{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;padding:15px;border-radius:12px;margin:10px 0;text-align:center;animation:pulse 1.5s infinite}
+    .admin-comment-btn{background:#4CAF50;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;margin-top:8px}
+    .delete-comment-btn{background:#ff6b6b;color:white;border:none;padding:2px 6px;border-radius:4px;cursor:pointer;font-size:10px;position:absolute;right:8px;top:8px;}
+    @media (max-width:980px){.wrap{grid-template-columns:1fr}.float-wrap{display:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>🌈 Santé Mentale HD</h1>
+        <p>Yon espas an sekirite pou pataje sa w santi anonimman. Si w santi w an danje, rele liy kriz imedyatman.</p>
+      </header>
+
+      <div id="carousel-root"></div>
+
+      <section style="margin-top:12px">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="flex:1">
+            <strong>💫 Mesaj o aza jodi a</strong>
+            <div id="quote" style="margin-top:6px;color:var(--muted)"></div>
+          </div>
+          <button id="newQuote" class="btn secondary">🔄 Nouvo</button>
+        </div>
+      </section>
+
+      <section style="margin-top:12px">
+        <form id="postForm">
+          <input id="pseudo" type="text" placeholder="👤 Chwazi yon pseudo (opsyonèl)" maxlength="30"/>
+          <select id="mood">
+            <option value="unknown">😐 Chwazi kijan ou santi w (opsyonèl)</option>
+            <option value="sad">😢 Tris</option>
+            <option value="anxious">😰 Anksye</option>
+            <option value="lost">😵 Pèdi</option>
+            <option value="angry">😠 Fache</option>
+            <option value="smalljoy">🙂 Ti bon moman</option>
+          </select>
+          <textarea id="message" placeholder="✍️ Ekri sa w santi..." maxlength="1200"></textarea>
+          <label style="font-size:13px;color:var(--muted)"><input id="consent" type="checkbox" /> ✅ Mwen dakò ke mesaj mwen ka itilize pou alèt si li parèt ijan</label>
+          <div class="typing-encouragement" id="typingEncouragement"></div>
+          <div class="row">
+            <button id="sendBtn" type="button" class="btn">📤 Pibliye anonimman</button>
+            <button id="whatsappBtn" type="button" class="btn emergency">🚨 M bezwen pale kounye a</button>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-top:6px">
+            Nou modere chak mesaj anvan l parèt. Pa pataje enfòmasyon pèsonèl. Si w an danje, rele <strong>115 / 112</strong> oswa peze bouton "M bezwen pale kounye a".
+          </div>
+        </form>
+      </section>
+
+      <footer>
+        © Santé Mentale HD — Designed with care. Contacts: <a href="mailto:pikatcho77@gmail.com">pikatcho77@gmail.com</a>
+        <br/><a href="/privacy.html">Politique de confidentialité</a>
+      </footer>
+    </div>
+
+    <aside class="card">
+      <h3>📝 Fil mesaj (apwouve)</h3>
+      <div id="feed" class="messages"></div>
+
+      <div class="admin">
+        <h4>🔧 Admin / Modération</h4>
+        <div style="font-size:13px;color:var(--muted)">Antre kòd admin pou jere posts ki an atant</div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <input id="adminCode" type="password" placeholder="🔑 Kòd admin" />
+          <button id="adminLoad" class="btn secondary" type="button">📥 Chaje an atant</button>
+        </div>
+        <div id="adminPanel" style="display:none; margin-top:15px;">
+          <h5>⏳ Mesaj an atant</h5>
+          <div id="pending"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="float-wrap">
+    <div class="heart"></div>
+    <div class="heart" style="animation-delay:1s"></div>
+    <div class="heart" style="animation-delay:2s"></div>
+  </div>
+
+  <div id="confirmation" class="confirmation-message" aria-hidden="true">
+    <div class="confirmation-content">
+      <h3 id="confirmTitle">Mèsi</h3>
+      <p id="confirmBody">Nou te resevwa mesaj ou. Pran swen tèt ou.</p>
+      <button class="close-btn btn secondary" id="closeConfirm">Fèmen</button>
+    </div>
+  </div>
+
+  <div id="emergencyAlert" class="confirmation-message" aria-hidden="true">
+    <div class="confirmation-content">
+      <div class="emergency-alert">
+        <h3>🚨 ATANSYON - Detekte Dètres</h3>
+        <p>Mesaj ou a gen mo ki endike w ka an danje.</p>
+        <p><strong>Tanpri kontakte èd imedyatman:</strong></p>
+        <p>📞 <strong>115 / 112</strong> - Sèvis Ijans</p>
+        <p>💬 <strong>WhatsApp: 50949033260</strong></p>
+        <p>Ou pa poukont ou - nou la pou ede w!</p>
+      </div>
+      <button class="close-btn btn secondary" id="closeEmergency">Mwen konprann</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Data for carousel & quotes
+    const inspirationData = {
+      images: [
+        'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&w=800&q=80',
+        'https://images.unsplash.com/photo-1545235611-8b6e34f2ac13?ixlib=rb-4.0.3&w=800&q=80',
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&w=800&q=80'
+      ],
+      quotes: [
+        "Pale sou soufrans ou, se deja komanse geri",
+        "Emosyon ou merite yo tande",
+        "Pran swen sante mantal ou se yon akt kouray",
+        "Ou pa poukont ou nan chemen sa a",
+        "Chak jou se yon nouvo koumansman",
+        "Santi w mal se nòmal, ou pa fèb"
+      ],
+      encouragements: [
+        "Mèsi paske ou pataje 🌸",
+        "Vwa ou gen valè 💫", 
+        "Pran yon ti repo, ou se enpòtan 🌿",
+        "Kontinye ekri, ou ap fè yon bon jan 👏"
+      ]
+    };
+
+    // Kòd admin
+    const ADMIN_CODE = "sante123";
+
+    // Stockage local pour les messages
+    let messages = JSON.parse(localStorage.getItem('approvedMessages')) || [];
+    let pendingMessages = JSON.parse(localStorage.getItem('pendingMessages')) || [];
+
+    // Carousel setup
+    function createImageCarousel(){
+      const root = document.getElementById('carousel-root');
+      const container = document.createElement('div');
+      container.className = 'image-carousel card';
+      container.innerHTML = `
+        <div class="carousel-track">
+          ${inspirationData.images.map(img => `
+            <div class="carousel-slide">
+              <img src="${img}" alt="moun kap koute ak sipòte" onerror="this.style.display='none'">
+            </div>
+          `).join('')}
+        </div>
+        <div class="carousel-dots"></div>
+      `;
+      root.appendChild(container);
+      
+      const dots = container.querySelector('.carousel-dots');
+      inspirationData.images.forEach((_,i)=>{
+        const d = document.createElement('span'); 
+        d.className='dot' + (i===0?' active':'');
+        d.addEventListener('click',()=>goToSlide(i));
+        dots.appendChild(d);
+      });
+    }
+
+    let currentIndex = 0;
+    function goToSlide(i){
+      const track = document.querySelector('.carousel-track');
+      if(!track) return;
+      currentIndex = i;
+      track.style.transform = `translateX(-${i*100}%)`;
+      document.querySelectorAll('.dot').forEach((el,idx)=>el.classList.toggle('active', idx===i));
+    }
+    function nextSlide(){ goToSlide((currentIndex+1)%inspirationData.images.length); }
+    let carouselTimer = null;
+    function startCarousel(){ carouselTimer = setInterval(nextSlide,5000); }
+
+    // Quotes
+    function showQuote(){
+      const q = inspirationData.quotes[Math.floor(Math.random()*inspirationData.quotes.length)];
+      document.getElementById('quote').innerText = q;
+    }
+
+    // Typing encouragement
+    function showTypingEncouragement(){
+      const el = document.getElementById('typingEncouragement');
+      el.textContent = inspirationData.encouragements[Math.floor(Math.random()*inspirationData.encouragements.length)];
+      el.style.opacity = '1';
+      setTimeout(()=> el.style.opacity='0', 3000);
+    }
+
+    // Load feed
+    function loadFeed(){
+      const feed = document.getElementById('feed'); 
+      feed.innerHTML = '';
+      
+      if(messages.length === 0) {
+        feed.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">📝 Pa gen mesaj pou kounye a. Ou ka pataje premye mesaj ou!</div>';
+        return;
+      }
+
+      messages.forEach((msg, index) => {
+        const node = document.createElement('div'); 
+        node.className='msg';
+        
+        let commentsHtml = '';
+        if (msg.comments && msg.comments.length > 0) {
+          commentsHtml = `<div class="comment-section">
+            <strong>💬 Kòmantè (${msg.comments.length}):</strong>
+            ${msg.comments.map((comment, commentIndex) => 
+              `<div class="comment">
+                 <button class="delete-comment-btn" onclick="deleteComment(${index}, ${commentIndex})">🗑️</button>
+                 <strong>${comment.author || 'Moderatè'}:</strong> ${comment.text}
+                 <div style="font-size:11px;color:var(--muted);margin-top:4px">
+                   ${comment.date || ''}
+                 </div>
+               </div>`
+            ).join('')}
+          </div>`;
+        }
+
+        const commentForm = `
+          <div class="comment-form">
+            <input type="text" class="comment-input" placeholder="Ajoute yon kòmantè..." id="comment-${index}">
+            <button class="admin-comment-btn" onclick="addComment(${index})">💬 Kòmantè</button>
+          </div>
+        `;
+
+        node.innerHTML = `
+          <div class="meta">${msg.pseudo} · ${getMoodEmoji(msg.mood)} ${msg.mood} · ${msg.approvedAt || msg.date}</div>
+          <div style="margin-top:6px;line-height:1.5">${msg.text}</div>
+          ${commentsHtml}
+          ${commentForm}
+        `;
+        feed.appendChild(node);
+      });
+    }
+
+    function getMoodEmoji(mood) {
+      const emojis = {
+        'sad': '😢',
+        'anxious': '😰', 
+        'lost': '😵',
+        'angry': '😠',
+        'smalljoy': '🙂',
+        'unknown': '😐'
+      };
+      return emojis[mood] || '😐';
+    }
+
+    // Add comment
+    function addComment(messageIndex) {
+      const commentInput = document.getElementById(`comment-${messageIndex}`);
+      const commentText = commentInput.value.trim();
+      
+      if (!commentText) {
+        alert('Tanpri ekri yon kòmantè!');
+        return;
+      }
+
+      if (!messages[messageIndex].comments) {
+        messages[messageIndex].comments = [];
+      }
+
+      const comment = {
+        text: commentText,
+        author: 'Moderatè',
+        date: new Date().toLocaleString()
+      };
+      
+      messages[messageIndex].comments.push(comment);
+      localStorage.setItem('approvedMessages', JSON.stringify(messages));
+      commentInput.value = '';
+      loadFeed();
+    }
+
+    // Delete comment
+    function deleteComment(messageIndex, commentIndex) {
+      if (!confirm('Èske w sèten w vle efase kòmantè sa a?')) return;
+      
+      messages[messageIndex].comments.splice(commentIndex, 1);
+      localStorage.setItem('approvedMessages', JSON.stringify(messages));
+      loadFeed();
+    }
+
+    // Check for emergency words
+    function checkForEmergency(text) {
+      const dangerousWords = [
+        'mwen vle mouri', 'fè tèt mwen mal', 'sui', 'suicide', 'mwen pa kapab ankò'
+      ];
+      const lowerText = text.toLowerCase();
+      return dangerousWords.some(word => lowerText.includes(word));
+    }
+
+    // Show emergency alert
+    function showEmergencyAlert() {
+      document.getElementById('emergencyAlert').classList.add('show');
+    }
+
+    // Submit message
+    function submitMessage(){
+      const pseudo = (document.getElementById('pseudo').value||'Anonim').trim().slice(0,30);
+      const mood = document.getElementById('mood').value;
+      const text = document.getElementById('message').value.trim();
+      const consent = document.getElementById('consent').checked;
+      
+      if(!text){ 
+        alert('Tanpri ekri yon mesaj.'); 
+        return; 
+      }
+
+      if(checkForEmergency(text)) {
+        showEmergencyAlert();
+        if(!confirm('⚠️ Mesaj ou a gen mo ki endike detres. Èske w vle kontinye?')) return;
+      }
+
+      if(!consent) {
+        if(!confirm('Ou pa dakò konsantman an. Kontinye san konsantman?')) return;
+      }
+
+      const newMessage = {
+        id: Date.now(),
+        pseudo: pseudo,
+        mood: mood,
+        text: text,
+        date: new Date().toLocaleString(),
+        comments: []
+      };
+      
+      pendingMessages.push(newMessage);
+      localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+      
+      document.getElementById('message').value = '';
+      document.getElementById('pseudo').value = '';
+      showConfirmation();
+      
+      if (document.getElementById('adminPanel').style.display === 'block') {
+        loadPending();
+      }
+    }
+
+    function showConfirmation(){
+      const modal = document.getElementById('confirmation');
+      document.getElementById('confirmTitle').innerText = inspirationData.encouragements[Math.floor(Math.random()*inspirationData.encouragements.length)];
+      document.getElementById('confirmBody').innerText = 'Nou te resevwa mesaj ou. Mèsi paske ou pataje. Pran swen tèt ou.';
+      modal.classList.add('show');
+    }
+
+    // Load pending messages
+    function loadPending(){
+      const el = document.getElementById('pending'); 
+      el.innerHTML = '';
+      
+      if(pendingMessages.length === 0) {
+        el.innerHTML='<div style="color:var(--muted);text-align:center;padding:10px">✅ Pa gen mesaj an atant.</div>';
+        return;
+      }
+
+      pendingMessages.forEach((msg, index) => {
+        const node = document.createElement('div'); 
+        node.className='msg';
+        node.innerHTML = `
+          <div class="meta">${msg.pseudo} — ${getMoodEmoji(msg.mood)} ${msg.mood} — ${msg.date}</div>
+          <div style="margin-top:6px;line-height:1.5">${msg.text}</div>
+          ${checkForEmergency(msg.text) ? '<div style="color:red;font-size:12px;margin-top:4px">🚨 DETÈS DETEKTE</div>' : ''}
+        `;
+        
+        const btnContainer = document.createElement('div');
+        btnContainer.style.marginTop = '10px';
+        btnContainer.style.display = 'flex';
+        btnContainer.style.gap = '6px';
+        
+        const approve = document.createElement('button'); 
+        approve.className='btn'; 
+        approve.innerText='✅ Apwouve';
+        const reject = document.createElement('button'); 
+        reject.className='btn secondary'; 
+        reject.innerText='❌ Refize';
+        
+        approve.onclick = () => {
+          msg.approvedAt = new Date().toLocaleString();
+          messages.unshift(msg);
+          pendingMessages.splice(index, 1);
+          localStorage.setItem('approvedMessages', JSON.stringify(messages));
+          localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+          loadFeed();
+          loadPending();
+        };
+        
+        reject.onclick = () => {
+          if(confirm('Èske w sèten w vle refize mesaj sa a?')) {
+            pendingMessages.splice(index, 1);
+            localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+            loadPending();
+          }
+        };
+        
+        btnContainer.appendChild(approve);
+        btnContainer.appendChild(reject);
+        node.appendChild(btnContainer);
+        el.appendChild(node);
+      });
+    }
+
+    // WhatsApp button
+    function openWhatsApp(){
+      const phone = '50949033260';
+      const text = encodeURIComponent('Bonjou, mwen santi mwen bezwen pale ak yon moun — Santé Mentale HD');
+      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    }
+
+    // Admin authentication
+    function authenticateAdmin() {
+      const code = document.getElementById('adminCode').value;
+      if (code === ADMIN_CODE) {
+        document.getElementById('adminPanel').style.display = 'block';
+        loadPending();
+        alert('✅ Admin otantifye avèk siksè!');
+      } else {
+        alert('❌ Kòd admin pa kòrèk!');
+        document.getElementById('adminPanel').style.display = 'none';
+      }
+    }
+
+    // Init events
+    document.addEventListener('DOMContentLoaded', ()=>{
+      createImageCarousel();
+      showQuote();
+      startCarousel();
+      document.getElementById('newQuote').addEventListener('click', showQuote);
+      document.getElementById('sendBtn').addEventListener('click', submitMessage);
+      document.getElementById('whatsappBtn').addEventListener('click', openWhatsApp);
+      document.getElementById('adminLoad').addEventListener('click', authenticateAdmin);
+      document.getElementById('closeConfirm').addEventListener('click', ()=>document.getElementById('confirmation').classList.remove('show'));
+      document.getElementById('closeEmergency').addEventListener('click', ()=>document.getElementById('emergencyAlert').classList.remove('show'));
+      document.querySelector('textarea').addEventListener('focus', showTypingEncouragement);
+      loadFeed();
+    });
+  </script>
+</body>
+</html>
